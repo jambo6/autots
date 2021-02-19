@@ -1,0 +1,40 @@
+repos:
+
+# Formatting
+- repo: https://github.com/ambv/black
+  rev: 20.8b1
+  hooks:
+  - id: black
+    language_version: python3
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.8.4
+  hooks:
+  - id: flake8
+# Sort imports
+- repo: https://github.com/asottile/seed-isort-config
+  rev: v2.2.0
+  hooks:
+    - id: seed-isort-config
+- repo: https://github.com/pre-commit/mirrors-isort
+  rev: v5.7.0
+  hooks:
+    - id: isort
+
+# Test
+- repo: local
+  hooks:
+    - id: pytest-check
+      name: pytest-check
+      entry: pytest tsbatteries
+      language: system
+      pass_filenames: false
+      always_run: true
+
+# No large files
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.4.0
+  hooks:
+  - id: check-added-large-files
+  - id: trailing-whitespace
+  - id: no-commit-to-branch
+  - id: requirements-txt-fixer

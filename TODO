@@ -1,0 +1,7 @@
+# Add random states to PipelineCompiler splitting
+
+# Put the ignite trainer in here and make a non-ignite trainer
+
+# Output model and datasets and allow for further performance evaluation (for example full ROC)
+
+# Enable pipeline application to dataframes, returning split dataframes.

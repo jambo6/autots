@@ -1,0 +1,6 @@
+git+git://github.com/patrick-kidger/torchcde.git@a7b8403
+numpy>=1.20.0
+pbr>=2.0.0
+scikit-learn>=0.24.1
+torch>=1.7.1
+torchdiffeq>=0.2.0
