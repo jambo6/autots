@@ -1,3 +1,4 @@
+""" Helpful utilites used around the project. """
 import random
 
 import pandas as pd
@@ -90,8 +91,8 @@ def make_time_series_problem(
 def _convert_online_labels_to_pandas(labels):
     """ Converts a list of online labels to pandas format. """
     to_convert = [
-        torch.cat((torch.arange(len(l)).view(-1, 1), l.view(-1, 1)), dim=-1)
-        for l in labels
+        torch.cat((torch.arange(len(lb)).view(-1, 1), lb.view(-1, 1)), dim=-1)
+        for lb in labels
     ]
     labels = _convert_temporal_to_pandas(to_convert)
     return labels

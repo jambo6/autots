@@ -1,3 +1,4 @@
+""" Data scaling transformer. """
 import torch
 from sklearn.base import TransformerMixin
 from sklearn.preprocessing import (FunctionTransformer, MaxAbsScaler,

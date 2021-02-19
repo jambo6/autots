@@ -1,3 +1,4 @@
+""" The Neural CDE model class. """
 import torch
 import torchcde
 from torch import nn

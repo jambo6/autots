@@ -36,5 +36,5 @@ def test_ncde_static_initial(static_dim, use_initial):
     model, data, labels = setup_ncde_problem(
         static_dim=static_dim, use_initial=use_initial
     )
-    _, acc = helpers.training_loop(model, data, labels, n_epochs=10)
+    _, acc = helpers.training_loop(model, data, labels, n_epochs=1)
     assert 0 <= acc <= 1

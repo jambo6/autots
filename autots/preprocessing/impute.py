@@ -1,9 +1,11 @@
+""" Imputation and interpolation. """
 import torch
 from sklearn.base import TransformerMixin
 from sklearn.impute import SimpleImputer as _SimpleImputer
 from torchcde import linear_interpolation_coeffs
 
-from .mixin import apply_fit_to_channels, apply_transform_to_channels, apply_transform_to_channel_subset
+from .mixin import (apply_fit_to_channels, apply_transform_to_channel_subset,
+                    apply_transform_to_channels)
 
 
 class SimpleImputer(TransformerMixin):
@@ -25,7 +27,11 @@ class SimpleImputer(TransformerMixin):
         self.imputer = _SimpleImputer(strategy=strategy, fill_value=fill_value)
 
     def __repr__(self):
-        string = '{}={}'.format(self.strategy, self.fill_value) if self.strategy == 'constant' else self.strategy
+        string = (
+            "{}={}".format(self.strategy, self.fill_value)
+            if self.strategy == "constant"
+            else self.strategy
+        )
         return "Impute {}".format(string)
 
     @apply_fit_to_channels
@@ -71,7 +77,10 @@ class Interpolation(TransformerMixin):
     """
 
     def __init__(self, method="linear", channel_indices=None):
-        assert method in ["linear", "rectilinear"], "Got method {} which is not recognised".format(method)
+        assert method in [
+            "linear",
+            "rectilinear",
+        ], "Got method {} which is not recognised".format(method)
         self.method = method
         self.channel_indices = channel_indices
 
@@ -93,9 +102,9 @@ class ForwardFill(TransformerMixin):
     """Forward fills data in a torch tensor of shape (..., num_samples, input_channels) along the num_samples dim.
 
     Arguments:
-        fill_index (int): Denotes the index to fill down. Default is -2 as we tend to use the convention (..., num_samples,
-            input_channels) filling down the num_samples dimension.
-        backwards (bool): Set True to first flip the tensor along the num_samples axis so as to perform a backwards fill.
+        fill_index (int): Denotes the index to fill down. Default is -2 as we tend to use the convention (...,
+            num_samples, input_channels) filling down the num_samples dimension.
+        backwards (bool): Set True to first flip the tensor along the num_samples axis so as to perform a backfill.
         channel_indices (list or None): Leave as None to apply to the whole dataset, else apply a list of indices to
             apply only to that subset of channels, e.g. [0, 2, 5] will apply to the first third and fifth channel.
 

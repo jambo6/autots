@@ -1,3 +1,4 @@
+""" RNN/GRU/LSTM implementation. """
 from torch import nn
 
 MODELS = {"rnn": nn.RNN, "gru": nn.GRU, "lstm": nn.LSTM}

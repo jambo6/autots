@@ -1,3 +1,4 @@
+""" Contains classes for packaging time series data into usable torch datasets. """
 import torch
 
 
