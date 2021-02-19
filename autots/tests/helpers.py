@@ -1,6 +1,7 @@
 """ Reusable helper functions for testing. """
 import torch
 from torch import nn, optim
+
 from autots.models.utils import NanLossWrapper
 
 # Define criterions and NaN criterion
@@ -10,7 +11,7 @@ CRITERIONS = {
     "mse": nn.MSELoss(),
     "nan_bce": NanLossWrapper(nn.BCEWithLogitsLoss()),
     "nan_ce": NanLossWrapper(nn.CrossEntropyLoss()),
-    "nan_mse": NanLossWrapper(nn.MSELoss())
+    "nan_mse": NanLossWrapper(nn.MSELoss()),
 }
 
 
@@ -19,11 +20,11 @@ def set_seed(seed=1):
     torch.cuda.manual_seed(seed)
 
 
-def training_loop(model, data, labels, n_epochs=5, criterion="bce"):
+def training_loop(model, data, labels, n_epochs=5, loss_str="bce", lr=0.1):
     # Setup
     labels = labels.to(torch.float)
-    optimizer = optim.Adam(model.parameters(), lr=0.1)
-    criterion = CRITERIONS[criterion]
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    criterion = CRITERIONS[loss_str]
 
     # Get loopy
     for _ in range(n_epochs):
@@ -37,13 +38,12 @@ def training_loop(model, data, labels, n_epochs=5, criterion="bce"):
     preds = torch.sigmoid(model(data))
 
     # Non-nan eval
-    if "bce" in 'criterion':
+    if "bce" in loss_str:
         mask = ~torch.isnan(labels)
         metric = ((labels[mask] == torch.round(preds[mask])).sum() / mask.sum()).item()
-    elif 'mse' in 'criterion':
+    elif "mse" in loss_str:
         metric = criterion(preds, labels).item()
     else:
         raise NotImplementedError
 
     return preds, metric
-

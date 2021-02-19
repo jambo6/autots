@@ -46,7 +46,9 @@ class RNN(nn.Module):
         self.apply_final_linear = apply_final_linear
 
         # Get the model class
-        assert model_string in MODELS.keys(), "model_string must be one of ('rnn', 'lstm', 'gru')"
+        assert (
+            model_string in MODELS.keys()
+        ), "model_string must be one of ('rnn', 'lstm', 'gru')"
         model = MODELS[model_string]
 
         # Network is static dim is set
@@ -82,7 +84,7 @@ class RNN(nn.Module):
                 len(inputs) == 2
             ), "Inputs must be a 2-tuple of (static_data, temporal_data)."
             static_data, temporal_data = inputs
-            h0 = self.initial_net(static_data)
+            h0 = self.initial_net(static_data).unsqueeze(0)
         else:
             temporal_data = inputs
             h0 = None

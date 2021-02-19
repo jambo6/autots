@@ -1,6 +1,7 @@
 import random
-import torch
+
 import pandas as pd
+import torch
 
 
 def make_time_series_problem(
@@ -43,22 +44,24 @@ def make_time_series_problem(
 
     # Make some stratify and modify the data to make it predictable
     if regression:
-        labels = torch.randn(len(temporal_data), 1)
+        labels = torch.randn(len(temporal_data), 1, dtype=torch.float)
         temporal_data = temporal_data * labels.reshape(-1, 1, 1)
     elif online:
         assert n_classes == 2
-        labels = torch.randint(0, n_classes, temporal_data.shape[:2])
+        labels = torch.randint(0, n_classes, temporal_data.shape[:2], dtype=torch.float)
     else:
-        labels = torch.randint(0, n_classes, [len(temporal_data)])
+        labels = torch.randint(0, n_classes, [len(temporal_data), 1], dtype=torch.float)
         temporal_data = temporal_data * labels.reshape(-1, 1, 1)
 
     # Some data modifications
     if masking:
         temporal_data = temporal_data * torch.randint(0, 2, temporal_data.shape)
     if ragged:
-        temporal_data = [d[:random.randint(2, 10)] for i, d in enumerate(temporal_data)]
+        temporal_data = [
+            d[: random.randint(2, 10)] for i, d in enumerate(temporal_data)
+        ]
         if labels.dim() > 1:
-            labels = [ls[:len(d)] for ls, d in zip(labels, temporal_data)]
+            labels = [ls[: len(d)] for ls, d in zip(labels, temporal_data)]
 
     # Format data for outputting
     if pandas_format:
@@ -86,7 +89,10 @@ def make_time_series_problem(
 
 def _convert_online_labels_to_pandas(labels):
     """ Converts a list of online labels to pandas format. """
-    to_convert = [torch.cat((torch.arange(len(l)).view(-1, 1), l.view(-1, 1)), dim=-1) for l in labels]
+    to_convert = [
+        torch.cat((torch.arange(len(l)).view(-1, 1), l.view(-1, 1)), dim=-1)
+        for l in labels
+    ]
     labels = _convert_temporal_to_pandas(to_convert)
     return labels
 
@@ -106,6 +112,8 @@ def _convert_temporal_to_pandas(data):
         d = torch.cat([ids, d], axis=-1)
         frames.append(pd.DataFrame(data=d.numpy()))
     frame = pd.concat(frames)
-    frame.columns = ['id', 'time'] + ['feature_{}'.format(x) for x in range(1, num_channels)]
+    frame.columns = ["id", "time"] + [
+        "feature_{}".format(x) for x in range(1, num_channels)
+    ]
 
     return frame

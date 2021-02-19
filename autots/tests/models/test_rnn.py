@@ -1,7 +1,8 @@
 import pytest
+
 from autots.models import RNN
-from autots.utils import make_time_series_problem
 from autots.tests.helpers import set_seed, training_loop
+from autots.utils import make_time_series_problem
 
 set_seed(0)
 
@@ -25,8 +26,6 @@ def test_rnn_handles_static(model_string, static_dim):
         model_string=model_string,
         return_sequences=False,
     )
-    _, acc = training_loop(model, data, labels, n_epochs=50)
+    _, acc = training_loop(model, data, labels, n_epochs=5)
 
-    assert 0 <= acc <= 1
-
-
+    assert 0.8 < acc <= 1
