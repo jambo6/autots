@@ -1,8 +1,10 @@
 """ Pipeline classes for transformation automation. """
-from sklearn.pipeline import Pipeline
 import torch
+from sklearn.pipeline import Pipeline
 from torch.utils.data import DataLoader
+
 from autots.dataset import SupervisedLearningDataset
+
 from .mixin import NullTransformer
 
 
@@ -52,7 +54,8 @@ class SupervisedLearningDataPipeline:
     def __init__(self, tensor_pipelines, label_pipeline=None, cv=None, batch_size=None):
         """
         Args:
-            tensor_pipelines (list): A list of pipelines.
+            tensor_pipelines (list or pipeline): A list of pipelines corresponding to multiple data source, or a single
+                pipeline for a single data source.
             label_pipeline (pipeline or None): A label pipeline object or None.
             cv (cv or None): This must be a cross validation class with a split method that returns a list of
                 indices. If this is not set sets self.train_indices to all indices.
@@ -68,6 +71,9 @@ class SupervisedLearningDataPipeline:
         if label_pipeline is None:
             self.label_pipeline = NullTransformer()
 
+        self.num_data_pipelines = (
+            len(self.tensor_pipelines) if isinstance(self.tensor_pipelines, list) else 1
+        )
         self.is_fitted = False
         self.train_indices = None
         self.val_indices = None
@@ -75,7 +81,7 @@ class SupervisedLearningDataPipeline:
 
     def __repr__(self):
         # Print information on the contained pipelines
-        string = "{} data pipelines:"
+        string = "{} data pipelines:".format(self.num_data_pipelines)
         for i, pipeline in enumerate(self.tensor_pipelines):
             string += "\n{}. {}".format(i + 1, repr(pipeline))
         if self.label_pipeline:
@@ -85,15 +91,26 @@ class SupervisedLearningDataPipeline:
     @property
     def indices(self):
         # Return the indices if any exist, otherwise return none
-        indices = [x for x in [self.train_indices, self.val_indices, self.test_indices] if x is not None]
+        indices = [
+            x
+            for x in [self.train_indices, self.val_indices, self.test_indices]
+            if x is not None
+        ]
         if len(indices) == 0:
             indices = None
         return indices
 
     def _generate_indices(self, labels):
         """ Splits the data, if no cv is set train indices becomes all indices. """
+        # Method to get stratification laebsl if one exists
+        stratification_labels = labels
+        if hasattr(self.label_pipeline, "get_stratification_labels"):
+            stratification_labels = self.label_pipeline.get_stratification_labels(
+                labels
+            )
+
         if self.cv:
-            indices = self.cv.split(len(labels), labels)
+            indices = self.cv.split(len(labels), stratification_labels)
             if len(indices) == 2:
                 self.train_indices, self.test_indices = indices
             else:
@@ -106,11 +123,11 @@ class SupervisedLearningDataPipeline:
         self._generate_indices(labels)
 
         # Fit the data
-        for tensor, pipeline in zip(tensors, self.tensor_pipelines):
-            pipeline.fit(tensor[self.train_indices])
-
-        # Fit the labels
-        self.label_pipeline.fit(labels[self.train_indices])
+        if self.num_data_pipelines > 1:
+            for tensor, pipeline in zip(tensors, self.tensor_pipelines):
+                pipeline.fit(tensor[self.train_indices])
+        else:
+            self.tensor_pipelines.fit(tensors[self.train_indices])
 
         # Assert fitted
         self.is_fitted = True
@@ -131,9 +148,14 @@ class SupervisedLearningDataPipeline:
         outputs = []
         for indices in self.indices:
             # Transform the tensors for the given indices
-            split_tensors = []
-            for i, (tensor, pipeline) in enumerate(zip(tensors, self.tensor_pipelines)):
-                split_tensors.append(pipeline.transform(tensor[indices]))
+            if self.num_data_pipelines > 1:
+                split_tensors = []
+                for i, (tensor, pipeline) in enumerate(
+                    zip(tensors, self.tensor_pipelines)
+                ):
+                    split_tensors.append(pipeline.transform(tensor[indices]))
+            else:
+                split_tensors = self.tensor_pipelines.transform(tensors[indices])
 
             # Transform the labels
             split_labels = labels[indices]
@@ -143,7 +165,11 @@ class SupervisedLearningDataPipeline:
 
         # Further processing
         if self.batch_size is not None:
-            outputs = [self._to_dataloader(tensors, labels) for tensors, labels in outputs]
+            outputs = [
+                self._to_dataloader(tensors, labels) for tensors, labels in outputs
+            ]
+        if len(outputs) == 1:
+            outputs = outputs[0]
 
         return outputs
 

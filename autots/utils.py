@@ -1,6 +1,7 @@
 """ Helpful utilites used around the project. """
 import random
 
+import numpy as np
 import pandas as pd
 import torch
 
@@ -10,9 +11,8 @@ def make_time_series_problem(
     length=10,
     n_channels=5,
     static_dim=3,
-    regression=False,
+    problem="oneshot",
     n_classes=2,
-    online=False,
     ragged=False,
     masking=False,
     pandas_format=False,
@@ -27,9 +27,8 @@ def make_time_series_problem(
         length (int): Length of the dataset.
         n_channels (int): Number of input channels. Must be > 1 to allow time concatenation.
         static_dim (int or None): Dimension of the static data, set False for no static data.
-        regression (bool): Create a regression problem.
+        problem (str): Any of ('oneshot', 'online', 'regression').
         n_classes (int): Number of classes (inactive if regression).
-        online (bool): Set True to make online classification labels
         ragged (bool): Create ragged tensors.
         masking (bool): Mask with some zeros
         pandas_format (bool): Set True to output in pandas format.
@@ -44,30 +43,37 @@ def make_time_series_problem(
     temporal_data = torch.cat([times, temporal_data], axis=-1)
 
     # Make some stratify and modify the data to make it predictable
-    if regression:
+    if problem == "regression":
         labels = torch.randn(len(temporal_data), 1, dtype=torch.float)
         temporal_data = temporal_data * labels.reshape(-1, 1, 1)
-    elif online:
+    elif problem == "online":
         assert n_classes == 2
         labels = torch.randint(0, n_classes, temporal_data.shape[:2], dtype=torch.float)
-    else:
+        # Make some rows all zero else oevery sample has a 1
+        labels[0::10] = torch.zeros_like(labels[0::10], dtype=torch.float)
+    elif problem == "oneshot":
         labels = torch.randint(0, n_classes, [len(temporal_data), 1], dtype=torch.float)
         temporal_data = temporal_data * labels.reshape(-1, 1, 1)
+    else:
+        raise NotImplementedError
 
     # Some data modifications
     if masking:
         temporal_data = temporal_data * torch.randint(0, 2, temporal_data.shape)
     if ragged:
-        temporal_data = [
-            d[: random.randint(2, 10)] for i, d in enumerate(temporal_data)
-        ]
+        temporal_data = np.array(
+            [d[: random.randint(2, 10)] for i, d in enumerate(temporal_data)],
+            dtype=object,
+        )
         if labels.dim() > 1:
-            labels = [ls[: len(d)] for ls, d in zip(labels, temporal_data)]
+            labels = np.array(
+                [ls[: len(d)] for ls, d in zip(labels, temporal_data)], dtype=object
+            )
 
     # Format data for outputting
     if pandas_format:
         temporal_data = _convert_temporal_to_pandas(temporal_data)
-        if online:
+        if problem == "online":
             labels = _convert_online_labels_to_pandas(labels)
         else:
             labels = pd.Series(labels)
