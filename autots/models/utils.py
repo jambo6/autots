@@ -24,7 +24,7 @@ class NanLossWrapper(nn.Module):
 
     def forward(self, preds, labels):
         mask = ~torch.isnan(labels)
-        return self.criterion(preds[mask], labels[mask])
+        return self.criterion(preds[mask].reshape(-1), labels[mask].reshape(-1))
 
 
 def get_number_of_parameters(model):

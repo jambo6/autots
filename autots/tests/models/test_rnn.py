@@ -14,7 +14,9 @@ set_seed(0)
 def test_rnn_handles_static(model_string, static_dim):
     input_dim = 3
     data, labels = make_time_series_problem(
-        n_channels=3, static_dim=static_dim, regression=False, n_classes=2, online=False
+        n_channels=3,
+        static_dim=static_dim,
+        n_classes=2,
     )
 
     # Simple training loop

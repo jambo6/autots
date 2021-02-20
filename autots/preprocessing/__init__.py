@@ -1,8 +1,10 @@
 from .impute import ForwardFill, Interpolation, NegativeFilter, SimpleImputer
 from .misc import PadRaggedTensors
-from .scale import TensorScaler
-from .split import tensor_train_test_split, train_val_test_split
 from .pipeline import SimplePipeline, SupervisedLearningDataPipeline
+from .problem import LabelMaker
+from .scale import TensorScaler
+from .split import (TrainValTestSplit, tensor_train_test_split,
+                    train_val_test_split)
 
 __all__ = [
     # misc
@@ -15,8 +17,11 @@ __all__ = [
     # Scale
     "TensorScaler",
     # Split
+    "TrainValTestSplit",
     "tensor_train_test_split",
     "train_val_test_split",
+    # Labels
+    "LabelMaker",
     # Pipe
     "SimplePipeline",
     "SupervisedLearningDataPipeline",

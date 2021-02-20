@@ -40,7 +40,10 @@ def training_loop(model, data, labels, n_epochs=5, loss_str="bce", lr=0.1):
     # Non-nan eval
     if "bce" in loss_str:
         mask = ~torch.isnan(labels)
-        metric = ((labels[mask] == torch.round(preds[mask])).sum() / mask.sum()).item()
+        metric = (
+            (labels[mask].view(-1) == torch.round(preds[mask]).view(-1)).sum()
+            / mask.sum()
+        ).item()
     elif "mse" in loss_str:
         metric = criterion(preds, labels).item()
     else:
