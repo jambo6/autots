@@ -29,24 +29,23 @@ def test_make_time_series_problem(static_dim, ragged, pandas_format):
 def test_make_online_labels(ragged, pandas_format):
     # Test online labels are generated properly
     data, labels = utils.make_time_series_problem(
-        static_dim=None, online=True, ragged=ragged, pandas_format=pandas_format
+        static_dim=None, problem="online", ragged=ragged, pandas_format=pandas_format
     )
     assert len(data) == len(labels)
 
 
-def setup_nan_loss_problem(online=False):
+def setup_nan_loss_problem(problem="oneshot"):
     input_dim = 3
     data, labels = utils.make_time_series_problem(
         n_channels=3,
         static_dim=None,
-        regression=False,
         n_classes=2,
-        online=online,
+        problem=problem,
         ragged=False,
     )
 
     # If online mask the labels to get nans
-    if online:
+    if problem == "online":
         mask = torch.randint(0, 2, labels.shape)
         labels[mask == 1] = float("nan")
 
@@ -75,6 +74,7 @@ def test_nan_loss_equals_non_nan_loss():
 
 
 def test_nan_loss_works_on_nans():
-    model, data, labels = setup_nan_loss_problem(online=True)
+    model, data, labels = setup_nan_loss_problem(problem="online")
+    labels = labels[:, -1]
     _, acc = training_loop(model, data, labels, n_epochs=1, loss_str="nan_bce")
     assert 0 < acc <= 1
