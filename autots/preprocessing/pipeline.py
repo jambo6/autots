@@ -1,10 +1,14 @@
 """ Pipeline classes for transformation automation. """
+import numpy as np
+import pandas as pd
 import torch
 from sklearn.pipeline import Pipeline
 from torch.utils.data import DataLoader
 
 from autots.dataset import SupervisedLearningDataset
 
+from .impute import ForwardFill
+from .misc import PadRaggedTensors
 from .mixin import NullTransformer
 
 
@@ -40,6 +44,99 @@ class SimplePipeline(Pipeline):
         if not isinstance(steps[0], tuple):
             steps = [(repr(s), s) for s in steps]
         return steps
+
+
+class SimplePandasPipeline:
+    """Mimics SimplePipeline but can be used on pandas format data.
+
+    Given temporal or static pandas data and a transformation pipeline, first converts the data onto ragged tensor
+    format, then applies the pipeline
+
+    Notes:
+        - For temporal data, automatically pads the data and forward fills the time value. The forward filling of time
+        enables the method to reduce the padded tensors onto the original times after transformations.
+        - When using LabelMaker with online labels, the 'return_online_times' flag **must** be set to True so that the
+        method can reconstruct the labels with the relevant times after the transform.
+    """
+
+    def __init__(self, data_type, steps, verbose=False):
+        """
+        Args:
+            data_type (str): One of ('static', 'temporal').
+            steps (list): List of transformers.
+            verbose (bool): Set True for verbose pipeline output.
+        """
+        assert data_type in [
+            "static",
+            "temporal",
+        ], "data_type must be one of static or temporal."
+        self.data_type = data_type
+
+        steps = self.additional_setup(steps)
+        self.pipeline = SimplePipeline(steps, verbose)
+
+    def additional_setup(self, steps):
+        initial_steps = []
+        if self.data_type == "temporal":
+            initial_steps = [
+                PadRaggedTensors(fill_value=float("nan")),
+                ForwardFill(channel_indices=[0]),
+            ]
+        steps = initial_steps + steps
+        return steps
+
+    def pre_convert(self, frame):
+        """ Convert temporal pandas to list of tensors. """
+        if self.data_type == "static":
+            ids = list(frame.index)
+            data = torch.tensor(frame.values)
+        else:
+            assert list(frame.columns[0:2]) == ["id", "time"], (
+                "Temporal frame must have id and time as the first two " "columns."
+            )
+            ids = frame["id"].unique()
+            data = [
+                torch.tensor(frame[frame["id"] == id_].values[:, 1:]) for id_ in ids
+            ]
+        return data, ids
+
+    def post_convert(self, transform_outputs, ids, original_frame):
+        # Remove up to the max time
+        if self.data_type == "static":
+            if isinstance(original_frame, pd.Series):
+                frame = pd.Series(index=ids, data=transform_outputs.numpy())
+            else:
+                frame = pd.DataFrame(
+                    index=ids,
+                    data=transform_outputs.numpy(),
+                    columns=original_frame.columns,
+                )
+        else:
+            tensor_list = [
+                t[: np.argwhere(t[..., 0] == t[..., 0].max()).reshape(-1)[0] + 1]
+                for t in transform_outputs
+            ]
+            flist = [
+                pd.DataFrame(index=[id_] * len(t), data=t.numpy()).reset_index()
+                for id_, t in zip(ids, tensor_list)
+            ]
+            frame = pd.concat(flist, axis=0)
+            frame.columns = original_frame.columns
+        return frame
+
+    def fit(self, frame, labels=None):
+        data, _ = self.pre_convert(frame)
+        return self.pipeline.fit(data, labels)
+
+    def transform(self, frame):
+        data, ids = self.pre_convert(frame)
+        transform_outputs = self.pipeline.transform(data)
+        outputs = self.post_convert(transform_outputs, ids, frame)
+        return outputs
+
+    def fit_transform(self, frame, labels=None):
+        self.fit(frame, labels)
+        return self.transform(frame)
 
 
 class SupervisedLearningDataPipeline:

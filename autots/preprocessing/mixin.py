@@ -51,11 +51,18 @@ def apply_transform_to_channel_subset(transform):
     """
 
     def inner(self, data):
-        assert hasattr(self, 'channel_indices'), "Decorator requires channel_indices attribute."
+        assert hasattr(
+            self, "channel_indices"
+        ), "Decorator requires channel_indices attribute."
         if self.channel_indices is None:
             data = transform(self, data)
         else:
-            data[..., self.channel_indices] = transform(self, data[..., self.channel_indices])
+            assert isinstance(
+                self.channel_indices, list
+            ), "Must be a list of channel indices e.g. [1] or [0, 3, 5]."
+            data[..., self.channel_indices] = transform(
+                self, data[..., self.channel_indices]
+            )
         return data
 
     return inner
@@ -63,6 +70,7 @@ def apply_transform_to_channel_subset(transform):
 
 class NullTransformer(TransformerMixin):
     """ Transformer that does noting. """
+
     def __repr__(self):
         return "Null transformer"
 
