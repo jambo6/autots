@@ -137,8 +137,9 @@ class TrainValTestSplit:
                 then will split using stratification_tensor as the stratify labels. NOTE: This will only work if
                 stratify were set to True in the model construction.
 
-        Todo:
-            - Logging warning if stratify not set but stratification tensor is given.
+        .. todo::
+
+            Logging warning if stratify not set but stratification tensor is given.
 
         Returns:
             A list of indices referring to [train_indices, test_indices] or [train_indices, val_indices, test_indices]

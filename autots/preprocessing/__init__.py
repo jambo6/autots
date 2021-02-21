@@ -1,6 +1,7 @@
 from .impute import ForwardFill, Interpolation, NegativeFilter, SimpleImputer
 from .misc import PadRaggedTensors
-from .pipeline import SimplePipeline, SupervisedLearningDataPipeline
+from .pipeline import (SimplePandasPipeline, SimplePipeline,
+                       SupervisedLearningDataPipeline)
 from .problem import LabelMaker
 from .scale import TensorScaler
 from .split import (TrainValTestSplit, tensor_train_test_split,
@@ -24,5 +25,6 @@ __all__ = [
     "LabelMaker",
     # Pipe
     "SimplePipeline",
+    "SimplePandasPipeline",
     "SupervisedLearningDataPipeline",
 ]

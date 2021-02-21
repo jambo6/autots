@@ -75,5 +75,6 @@ def test_nan_loss_equals_non_nan_loss():
 
 def test_nan_loss_works_on_nans():
     model, data, labels = setup_nan_loss_problem(problem="online")
+    labels = labels[:, -1]
     _, acc = training_loop(model, data, labels, n_epochs=1, loss_str="nan_bce")
     assert 0 < acc <= 1
