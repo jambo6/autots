@@ -1,10 +1,11 @@
 """ Miscellaneous transformers. """
 import torch
-from sklearn.base import TransformerMixin
 from torch.nn.utils.rnn import pad_sequence
 
+from autots.base.mixins import NoFitTransformerMixin
 
-class PadRaggedTensors(TransformerMixin):
+
+class PadRaggedTensors(NoFitTransformerMixin):
     """Converts a list of unequal num_samples tensors (or arrays) to a stacked tensor.
 
     If the input is a 3D tensor, reduces the num_samples of the sequence and ignores the padding step. If the object is
@@ -22,9 +23,6 @@ class PadRaggedTensors(TransformerMixin):
 
     def __repr__(self):
         return "Pad ragged tensors"
-
-    def fit(self, data, labels=None):
-        return self
 
     def transform(self, data):
         # If already a 3D tensor just perform num_samples reduction
