@@ -4,6 +4,8 @@ from sklearn.base import TransformerMixin
 from sklearn.impute import SimpleImputer as _SimpleImputer
 from torchcde import linear_interpolation_coeffs
 
+from autots.base.mixins import NoFitTransformerMixin
+
 from .mixin import (apply_fit_to_channels, apply_transform_to_channel_subset,
                     apply_transform_to_channels)
 
@@ -46,7 +48,7 @@ class SimpleImputer(TransformerMixin):
         return output_data
 
 
-class NegativeFilter(TransformerMixin):
+class NegativeFilter(NoFitTransformerMixin):
     """Replace negative values with zero.
 
     Arguments:
@@ -60,16 +62,13 @@ class NegativeFilter(TransformerMixin):
     def __repr__(self):
         return "Negative filter"
 
-    def fit(self, data, labels=None):
-        return self
-
     @apply_transform_to_channel_subset
     def transform(self, data):
         data[data < 0] = self.fill_value
         return data
 
 
-class Interpolation(TransformerMixin):
+class Interpolation(NoFitTransformerMixin):
     """Perform linear (or rectilinear) interpolation on the missing values.
 
     Arguments:
@@ -90,15 +89,12 @@ class Interpolation(TransformerMixin):
     def __repr__(self):
         return "{} Interpolation".format(self.method.title())
 
-    def fit(self, data, labels=None):
-        return self
-
     @apply_transform_to_channel_subset
     def transform(self, data):
         return linear_interpolation_coeffs(data, rectilinear=self._rectilinear)
 
 
-class ForwardFill(TransformerMixin):
+class ForwardFill(NoFitTransformerMixin):
     """Forward fills data in a torch tensor of shape (..., num_samples, input_channels) along the num_samples dim.
 
     Arguments:
@@ -128,9 +124,6 @@ class ForwardFill(TransformerMixin):
 
     def __repr__(self):
         return "Forward fill"
-
-    def fit(self, data, labels=None):
-        return self
 
     @apply_transform_to_channel_subset
     def transform(self, data):

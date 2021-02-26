@@ -1,19 +1,19 @@
-#language: python
-#cache: pip
-#python:
-#  - '3.8'
-#install:
-#  pip install -r requirements.txt
-#  pip install .
-#script: pytest autots
-#notifications:
-#  email:
-#    on_failure: never
-#    on_pull_requests: never
-#branches:
-#  only:
-#    - main
-#    - /^v.*$/
+language: python
+cache: pip
+python:
+  - '3.8'
+install:
+  pip install -r requirements.txt
+  pip install .
+script: pytest autots
+notifications:
+  email:
+    on_failure: never
+    on_pull_requests: never
+branches:
+  only:
+    - main
+    - /^v.*$/
 #deploy:
 #  provider: pypi
 #  user: __token__
