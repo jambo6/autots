@@ -71,9 +71,8 @@ class RNN(nn.Module):
         )
 
         # Output layer
-        self.total_hidden_size = num_layers * hidden_dim
         self.final_linear = (
-            nn.Linear(self.total_hidden_size, output_dim)
+            nn.Linear(self.hidden_dim, output_dim)
             if self.apply_final_linear
             else lambda x: x
         )
@@ -99,9 +98,10 @@ class RNN(nn.Module):
         h_full, _ = self.rnn(x, h0)
 
         # Terminal output if classifcation else return all outputs
-        if self.return_sequences:
-            outputs = self.final_linear(h_full)
-        else:
-            outputs = self.final_linear(h_full[:, -1, :])
+        outputs = (
+            self.final_linear(h_full)
+            if self.return_sequences
+            else self.final_linear(h_full[:, -1, :])
+        )
 
         return outputs
